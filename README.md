@@ -1,2 +1,15 @@
-# GiftPacks
-Flask Framework
+## GiftPacks Flask Framework
+适合前后端分离开发，开箱即用。
+
+- blueprint实现自动注入
+- 集成swagger
+- 通用功能封装
+- 分层化开发提升复用率
+
+----
+#### 持续优化中
+下版本添加内容
+- api鉴权
+- dao可实现反向生成代码（通过读取数据表结构自动生成对应单表查询方法）
+- 自动分页
+
