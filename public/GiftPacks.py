@@ -95,14 +95,38 @@ class DB:
         self.connect = pymysql.connect(host=self.host, port=int(self.port), user=self.user, passwd=self.passwd,
                                        db=self.schema, charset="utf8")
 
-    def select(self, sql):
+    def select(self, sql, index=None, limit=None) -> object:
         cursor = self.connect.cursor()
         try:
-            cursor.execute(sql)
-            return cursor.fetchall()
+            if index and limit and sql.find("SQL_CALC_FOUND_ROWS") != -1 and sql.find("limit") != -1:
+                sql = sql.replace("select", "select SQL_CALC_FOUND_ROWS")
+                sql += " limit %d,%d" % (int(index), int(limit))
+                cursor.execute(sql)
+                data = cursor.fetchall()
+                cursor.execute("select FOUND_ROWS()")
+                total_count = cursor.fetchone()[0]
+                return dict(data=data, total_count=total_count)
+            else:
+                cursor.execute(sql)
+                return cursor.fetchall()
         except Exception as e:
             logger.error("Error: select error -- %s -- error info:%s" % (sql, str(e)))
-            return []
+            return None
+
+    def select_page(self, sql: str, index: int, limit: int) -> dict:
+        cursor = self.connect.cursor()
+        try:
+            if sql.find("SQL_CALC_FOUND_ROWS") != -1 and sql.find("limit") != -1:
+                sql = sql.replace("select", "select SQL_CALC_FOUND_ROWS")
+                sql += " limit %d,%d" % (int(index), int(limit))
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            cursor.execute("select FOUND_ROWS()")
+            total_count = cursor.fetchone()[0]
+            return dict(data=data, total_count=total_count)
+        except Exception as e:
+            logger.error("Error: select error -- %s -- error info:%s" % (sql, str(e)))
+            return data(data=list(), total_count=0)
 
     def insert(self, sql):
         cursor = self.connect.cursor()

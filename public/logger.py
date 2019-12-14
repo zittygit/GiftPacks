@@ -3,7 +3,7 @@
 import logging
 import re
 from logging.handlers import TimedRotatingFileHandler
-
+from pprint import pformat
 
 class Logger:
     def __init__(self, module):
@@ -18,10 +18,10 @@ class Logger:
         self.logger.addHandler(log_file_handler)
 
     def error(self, message):
-        self.logger.error(message)
+        self.logger.error(pformat(message))
 
     def info(self, message):
-        self.logger.info(message)
+        self.logger.info(pformat(message))
 
     def debug(self, message):
-        self.logger.debug(message)
+        self.logger.debug(pformat(message))
