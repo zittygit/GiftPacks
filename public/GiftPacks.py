@@ -71,20 +71,24 @@ class FlaskConfig:
 class CODE:
     success = 0
     failure = -1
-    running = 1
 
 
 class STATE:
-    pending = 1
-    running = 2
-    finish = 3
-    error = 4
+    running = 1
+    finished = 2
+    error = -1
+
+
+class TIME:
+    @staticmethod
+    def now():
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
 
 
 class DB:
-    def __init__(self, section):
+    def __init__(self, conf, section):
         cp = configparser.ConfigParser()
-        cp.read("resources/GiftPacks.conf")
+        cp.read("conf/%s.conf" % conf)
         if not cp.has_section(section):
             raise ValueError('config section does not exit')
         self.host = cp.get(section, "host")
@@ -98,7 +102,7 @@ class DB:
     def select(self, sql, index=None, limit=None) -> object:
         cursor = self.connect.cursor()
         try:
-            if index and limit and sql.find("SQL_CALC_FOUND_ROWS") != -1 and sql.find("limit") != -1:
+            if index is not None and limit is not None and sql.find("SQL_CALC_FOUND_ROWS") == -1 and sql.find("limit") == -1:
                 sql = sql.replace("select", "select SQL_CALC_FOUND_ROWS")
                 sql += " limit %d,%d" % (int(index), int(limit))
                 cursor.execute(sql)
@@ -116,7 +120,7 @@ class DB:
     def select_page(self, sql: str, index: int, limit: int) -> dict:
         cursor = self.connect.cursor()
         try:
-            if sql.find("SQL_CALC_FOUND_ROWS") != -1 and sql.find("limit") != -1:
+            if sql.find("SQL_CALC_FOUND_ROWS") == -1 and sql.find("limit") == -1:
                 sql = sql.replace("select", "select SQL_CALC_FOUND_ROWS")
                 sql += " limit %d,%d" % (int(index), int(limit))
             cursor.execute(sql)
@@ -163,6 +167,17 @@ class DB:
         except Exception as e:
             self.connect.rollback()
             logger.error("Error: update error -- %s -- error info:%s" % (sql, str(e)))
+            return False
+
+    def delete(self, sql):
+        cursor = self.connect.cursor()
+        try:
+            cursor.execute(sql)
+            self.connect.commit()
+            return True
+        except Exception as e:
+            self.connect.rollback()
+            logger.error("Error: delete error -- %s -- error info:%s" % (sql, str(e)))
             return False
 
     def transaction(self):
